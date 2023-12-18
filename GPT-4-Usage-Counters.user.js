@@ -111,7 +111,8 @@ class ResetTimer {
 
 		// Create time input box
 		this.timeInput = document.createElement('input');
-		itemGrid.appendChild(this.timeInput);
+		itemGrid.insertBefore(this.timeInput, itemGrid.firstChild);
+		//itemGrid.appendChild(this.timeInput);
 		this.timeInput.type = 'time';
 
 		// Specify Style
@@ -213,8 +214,9 @@ class ResetTimer {
 	}
 }
 
-const gpt_4_timer = new ResetTimer(gpt_4_key + "_timer", gpt_4_reset_time)
 const custom_gpts_timer = new ResetTimer(custom_gpts_key + "_timer", custom_gpts_reset_time)
+const gpt_4_timer = new ResetTimer(gpt_4_key + "_timer", gpt_4_reset_time)
+
 
 //If we're _not_ on chat.openai.com, we exit here (I personally keep the timer present on every page, to remind me of the reset time - hence the check).
 if (!window.location.toString().includes("chat.openai.com")) {
@@ -314,7 +316,8 @@ class Counter {
 	initElements() {
 		// Create counter display
 		this.counterDisplay = document.createElement('div');
-		itemGrid.appendChild(this.counterDisplay);
+		//itemGrid.appendChild(this.counterDisplay);
+		itemGrid.insertBefore(this.counterDisplay, itemGrid.firstChild);
 		// Create the counter text
 		this.counterText = document.createElement('p');
 		this.counterText.style.textAlign = "center"
@@ -348,11 +351,12 @@ class Counter {
 }
 
 // Create counters
+let custom_gpts_counter = new Counter(custom_gpts_key + "_counter", custom_gpts_cap, "Custom GPTs", 'rgba(70, 130, 180, 0.5)', '100px', undefined);
+custom_gpts_timer.counter = custom_gpts_counter
+
 let gpt_4_counter = new Counter(gpt_4_key + "_counter", gpt_4_cap, "GPT-4", 'rgba(119, 54, 135, 0.5)', '50px', undefined);
 gpt_4_timer.counter = gpt_4_counter
 
-let custom_gpts_counter = new Counter(custom_gpts_key + "_counter", custom_gpts_cap, "Custom GPTs", 'rgba(70, 130, 180, 0.5)', '100px', undefined);
-custom_gpts_timer.counter = custom_gpts_counter
 
 //Set the timer colors depending on the counter values
 function setTimerColors() {

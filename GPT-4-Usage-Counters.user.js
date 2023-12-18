@@ -17,7 +17,7 @@ if (window.top != window.self)
 	return	//This is because chat.openai.com uses multiple threads. This way we avoid hooking multiple times, which causes issues.
 
 
-let debug_logs = true
+let debug_logs = false
 
 let gpt_4_cap = 40
 let custom_gpts_cap = 25
@@ -187,6 +187,16 @@ class ResetTimer {
 		}
 	}
 
+	isTimeSet() {
+		let storedResetTimeString = GM_getValue(this.timeKey)
+		console_log(`isTimeSet called for ${this.timeKey}`)
+		console_log(storedResetTimeString)
+
+		if (storedResetTimeString)
+			return true
+		return false
+	}
+
 	checkTime() {
 		const currentTime = new Date();
 		console_log(`Time check by ${this.timeKey}...`)
@@ -354,9 +364,13 @@ class Counter {
 let custom_gpts_counter = new Counter(custom_gpts_key + "_counter", custom_gpts_cap, "Custom GPTs", 'rgba(70, 130, 180, 0.5)', '100px', undefined);
 custom_gpts_timer.counter = custom_gpts_counter
 
+if (!custom_gpts_timer.isTimeSet())
+	custom_gpts_counter.saveAndUpdate(0)
+
 let gpt_4_counter = new Counter(gpt_4_key + "_counter", gpt_4_cap, "GPT-4", 'rgba(119, 54, 135, 0.5)', '50px', undefined);
 gpt_4_timer.counter = gpt_4_counter
-
+if (!gpt_4_timer.isTimeSet())
+	gpt_4_counter.saveAndUpdate(0)
 
 //Set the timer colors depending on the counter values
 function setTimerColors() {

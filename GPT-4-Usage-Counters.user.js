@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT GPT-4 Counters
 // @namespace 	 lugia19.com
-// @version      1.1
+// @version      1.2
 // @description  Add counters (and reset time indicators) for GPT-4/Custom GPTs to ChatGPT
 // @author       lugia19
 // @license		 MIT
@@ -390,6 +390,9 @@ function setTimerColors() {
 		custom_gpts_timer.setBgColor(default_timer_bg_color)
 	}
 }
+
+//Set colors at timer creation.
+setTimerColors()
 
 // Function to be called in saveAndUpdate for the GPT-4 counter
 const gpt4CounterCallback = (value) => {

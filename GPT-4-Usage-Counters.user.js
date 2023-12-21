@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT GPT-4 Counters
 // @namespace 	 lugia19.com
-// @version      1.2
+// @version      1.2.2
 // @description  Add counters (and reset time indicators) for GPT-4/Custom GPTs to ChatGPT
 // @author       lugia19
 // @license		 MIT
@@ -203,7 +203,13 @@ class ResetTimer {
 		let storedResetTimeString = GM_getValue(this.timeKey)
 		console_log(storedResetTimeString)
 		if (!storedResetTimeString) {
-			return	//No reset time set.
+			//No reset time set. Check if counter is appropriate.
+			if (this.counter) {
+				if (this.counter.getValue() != reset_counter_constant)
+					this.counter.saveAndUpdate(reset_counter_constant)
+			}
+			return
+
 		}
 		console_log("Reset time was set...")
 		let resetTime = new Date(storedResetTimeString);

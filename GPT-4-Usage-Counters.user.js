@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT GPT-4 Counters
 // @namespace 	 lugia19.com
-// @version      1.2.2
+// @version      1.3.0
 // @description  Add counters (and reset time indicators) for GPT-4/Custom GPTs to ChatGPT
 // @author       lugia19
 // @license		 MIT
@@ -239,6 +239,10 @@ if (!window.location.toString().includes("chat.openai.com")) {
 	return
 }
 
+gpt_4_timer.timeInput.style.display = "none"
+custom_gpts_timer.timeInput.style.display = "none"
+
+
 class Counter {
 	constructor(key, max_value, label, bg_color, top, callback) {
 		this.key = key;
@@ -449,18 +453,26 @@ const customGPTSCounterCallback = (value) => {
 gpt_4_counter.callback = gpt4CounterCallback
 custom_gpts_counter.callback = customGPTSCounterCallback
 
-
-
+gpt_4_counter.counterDisplay.style.transform = 'translateY(100%)';
+custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
 
 //Set callbacks to show/hide counter buttons
 itemGrid.addEventListener('mouseenter', () => {
 	gpt_4_counter.buttonContainer.style.display = ""
 	custom_gpts_counter.buttonContainer.style.display = ""
+	gpt_4_timer.timeInput.style.display = ""
+	custom_gpts_timer.timeInput.style.display = ""
+	gpt_4_counter.counterDisplay.style.transform = 'translateY(0)';
+	custom_gpts_counter.counterDisplay.style.transform = 'translateY(0)';
 });
 
 itemGrid.addEventListener('mouseleave', () => {
 	gpt_4_counter.buttonContainer.style.display = "none"
 	custom_gpts_counter.buttonContainer.style.display = "none"
+	gpt_4_timer.timeInput.style.display = "none"
+	custom_gpts_timer.timeInput.style.display = "none"
+	gpt_4_counter.counterDisplay.style.transform = 'translateY(100%)';
+	custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
 });
 
 //Automatically update counters via event delegation/bubbling

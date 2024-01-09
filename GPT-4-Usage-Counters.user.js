@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT GPT-4 Counters
 // @namespace 	 lugia19.com
-// @version      1.3.0
+// @version      1.3.1
 // @description  Add counters (and reset time indicators) for GPT-4/Custom GPTs to ChatGPT
 // @author       lugia19
 // @license		 MIT
@@ -13,8 +13,8 @@
 
 //If you want to have the next reset time show up on all webpages, simply change the match to be https://*/*
 
-if (window.top != window.self)
-	return	//This is because chat.openai.com uses multiple threads. This way we avoid hooking multiple times, which causes issues.
+if (window.top !== window.self)
+	throw 'Stopping execution of counters in separate thread.'	//This is because chat.openai.com uses multiple threads. This way we avoid hooking multiple times, which causes issues.
 
 
 let debug_logs = false
@@ -71,10 +71,20 @@ function getTwoDigits(value) {
 		return `${value}`
 	}
 }
+let refresh_path = normalizeSVGPath( "M4.5 2.5C5.05228 2.5 5.5 2.94772 5.5 3.5V5.07196C7.19872 3.47759 9.48483 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C7.1307 21.5 3.11828 17.8375 2.565 13.1164C2.50071 12.5679 2.89327 12.0711 3.4418 12.0068C3.99033 11.9425 4.48712 12.3351 4.5514 12.8836C4.98798 16.6089 8.15708 19.5 12 19.5C16.1421 19.5 19.5 16.1421 19.5 12C19.5 7.85786 16.1421 4.5 12 4.5C9.7796 4.5 7.7836 5.46469 6.40954 7H9C9.55228 7 10 7.44772 10 8C10 8.55228 9.55228 9 9 9H4.5C3.96064 9 3.52101 8.57299 3.50073 8.03859C3.49983 8.01771 3.49958 7.99677 3.5 7.9758V3.5C3.5 2.94772 3.94771 2.5 4.5 2.5Z" )
+console.log(`Refresh path: ${refresh_path}`)
+function normalizeSVGPath(path) {
+  path = path.trim();
+  path = path.replace(/\s+/g, ' ');  // Remove extra spaces
+  path = path.replace(/([A-Za-z])([0-9])/g, '$1$2');  // Remove spaces between commands and numbers
+  path = path.replace(/([0-9])([A-Za-z])/g, '$1$2');  // Remove spaces between numbers and commands
+  path = path.toUpperCase();  // Make all commands upper-case
+  return path;
+}
 
 function formatTime(dateString) {
 	if (dateString) {
-		date = new Date(dateString)
+		let date = new Date(dateString)
 		const hours = getTwoDigits(date.getHours());
 		const mins = getTwoDigits(date.getMinutes());
 
@@ -90,9 +100,9 @@ function isThreeFive() {
 	for (let item of radixItems) {
 		for (let child of item.children) {
 			if (child.matches('svg') && child.classList.contains("text-token-text-tertiary")) {
-				console_log("Found the arrow. This is the model selector.")
-				if (item.textContent == "ChatGPT 3.5") {
-					console_log("Is 3.5, bail.")
+				console.log("Found the arrow. This is the model selector.")
+				if (item.textContent === "ChatGPT 3.5") {
+					console.log("Is 3.5, bail.")
 					return true
 				}
 			}
@@ -101,9 +111,10 @@ function isThreeFive() {
 	return false
 }
 
+
+
 //ResetTimer class
 class ResetTimer {
-
 	constructor(storageTimeKey, period) {
 		this.timeKey = storageTimeKey;
 		this.period = period
@@ -144,9 +155,8 @@ class ResetTimer {
 
 	handleTimeChange() {
 		//Handle the user setting the value
-		console_log("Timeinput change hit");
-		console_log(this.timeInput.value);
-		if (this.timeInput.value != "") {
+		console.log(`Timeinput change hit: ${this.timeInput.value}`);
+		if (this.timeInput.value !== "") {
 			const [hours, minutes] = this.timeInput.value.split(':').map(Number);
 			const currentTime = new Date();
 			let newTime = new Date();
@@ -156,41 +166,38 @@ class ResetTimer {
 			// Check if the selected time has already passed for today
 			if (newTime <= currentTime) {
 				//User's chosen has passed, set `newTime` to tomorrow
-				console_log("New time has already passed, changing date to tomorrow...")
+				console.log("New time has already passed, changing date to tomorrow...")
 				newTime.setDate(currentTime.getDate() + 1);
 			}
 
-			console_log("Updating time...");
+			console.log("Updating time...");
 			GM_setValue(this.timeKey, newTime.toISOString());
 		} else {
-			console_log("timeInput.value was empty, setting stored time to nothing")
+			console.log("timeInput.value was empty, setting stored time to nothing")
 			GM_setValue(this.timeKey, null);
 		}
 	}
 
 	handleValueChange(key, oldValue, newValue, remote) {
-		if (oldValue != newValue) {
-			console_log("Updating time from storage...")
-			console_log(formatTime(newValue))
+		if (oldValue !== newValue) {
+			console.log(`Updating time from storage: ${formatTime(newValue)}`);
 			this.timeInput.value = formatTime(newValue)
 		}
 	}
 
 	initializeTimeIfNull() {
-		console_log(`initializeTimeIfNull called for ${this.timeKey}`)
+		console.log(`initializeTimeIfNull called for ${this.timeKey}`)
 		let resetTimeString = GM_getValue(this.timeKey)
 		if (!resetTimeString) {
-			console_log("Reset time not currently set, setting it...")
 			let newResetTime = new Date((new Date()).getTime() + this.period);
-			console_log(newResetTime)
+			console.log(`Reset time not currently set, setting it: ${newResetTime}`);
 			GM_setValue(this.timeKey, newResetTime.toISOString());
 		}
 	}
 
 	isTimeSet() {
 		let storedResetTimeString = GM_getValue(this.timeKey)
-		console_log(`isTimeSet called for ${this.timeKey}`)
-		console_log(storedResetTimeString)
+		console.log(`isTimeSet called for ${this.timeKey} with ${storedResetTimeString}`)
 
 		if (storedResetTimeString)
 			return true
@@ -199,29 +206,29 @@ class ResetTimer {
 
 	checkTime() {
 		const currentTime = new Date();
-		console_log(`Time check by ${this.timeKey}...`)
 		let storedResetTimeString = GM_getValue(this.timeKey)
-		console_log(storedResetTimeString)
+		console.log(`Time check by ${this.timeKey} for ${storedResetTimeString}`)
+
 		if (!storedResetTimeString) {
 			//No reset time set. Check if counter is appropriate.
 			if (this.counter) {
-				if (this.counter.getValue() != reset_counter_constant)
+				if (this.counter.getValue() !== reset_counter_constant)
 					this.counter.saveAndUpdate(reset_counter_constant)
 			}
 			return
 
 		}
-		console_log("Reset time was set...")
+		console.log("Reset time was set...")
 		let resetTime = new Date(storedResetTimeString);
 		if (resetTime) {
 			if (currentTime >= resetTime) {
 				//If this timer has a counter assigned, reset it
 				if (this.counter) {
-					console_log("Resetting counter...")
+					console.log("Resetting counter...")
 					this.counter.saveAndUpdate(reset_counter_constant)
 				}
 
-				console_log("Reset time triggered.")
+				console.log("Reset time triggered.")
 				//Set stored reset time to null.
 				GM_setValue(this.timeKey, null);
 				this.timeInput.value = ""
@@ -236,7 +243,7 @@ const gpt_4_timer = new ResetTimer(gpt_4_key + "_timer", gpt_4_reset_time)
 
 //If we're _not_ on chat.openai.com, we exit here (I personally keep the timer present on every page, to remind me of the reset time - hence the check).
 if (!window.location.toString().includes("chat.openai.com")) {
-	return
+	throw 'Not adding counters on non-chatGPT sites.'
 }
 
 gpt_4_timer.timeInput.style.display = "none"
@@ -257,27 +264,27 @@ class Counter {
 
 	//Listen for storage changes
 	valueListener(key, oldValue, newValue, remote) {
-		if (oldValue != newValue)
+		if (oldValue !== newValue)
 			this.saveAndUpdate(parseInt(newValue));
 	}
 
 	// Function to save counter to localStorage and update display
 	saveAndUpdate(value) {
 		//Check that the value is valid...
-		console_log(`saveandupdate ${this.key} value check... ${value}`)
-		if (value < 0 && value != reset_counter_constant)
+		console.log(`saveandupdate ${this.key} value check... ${value}`)
+		if (value < 0 && value !== reset_counter_constant)
 			value -= reset_counter_constant
 
 		// Call the callback if it exists
-		console_log(`Calling callback for ${this.key}`)
+		console.log(`Calling callback for ${this.key}`)
 		if (typeof this.callback === 'function') {
 			this.callback(value);
 		}
-		console_log(`Done calling callback for ${this.key}`)
+		console.log(`Done calling callback for ${this.key}`)
 		GM_setValue(this.key, value);
 
 		// Update the counter display (we show reset_counter_constant as 0, despite it being -999)
-		if (value == reset_counter_constant)
+		if (value === reset_counter_constant)
 			value = 0
 
 		this.counterText.textContent = `${this.label}: ${value}/${this.max_value}`;
@@ -285,7 +292,7 @@ class Counter {
 
 	getValue() {
 		let value = parseInt(GM_getValue(this.key));
-		if (!value && value != 0) {
+		if (!value && value !== 0) {
 			value = reset_counter_constant
 		}
 		return value
@@ -294,7 +301,6 @@ class Counter {
 	createButtons() {
 		this.buttonContainer = document.createElement('div');
 		Object.assign(this.buttonContainer.style, {
-			display: 'flex',
 			justifyContent: 'center',
 			gap: '5px',
 			display: 'none'	//Hide buttons initially
@@ -305,12 +311,11 @@ class Counter {
 			button.textContent = text;
 			button.onclick = () => {
 				let current_value = parseInt(GM_getValue(this.key));
-				if (!current_value && current_value != 0) {
+				if (!current_value && current_value !== 0) {
 					current_value = reset_counter_constant
 				}
-				console_log(current_value)
-				console_log(text)
-				if (current_value == reset_counter_constant) {
+				console.log(`Button with text ${text} clicked. Current value of counter: ${current_value}`)
+				if (current_value === reset_counter_constant) {
 					if (text === "+")
 						current_value = 1
 				} else {
@@ -318,9 +323,8 @@ class Counter {
 					else if (text === '-') current_value -= 1;
 					else current_value = reset_counter_constant;
 				}
-
-				console_log(current_value)
-				if (current_value < 0 && current_value != reset_counter_constant) current_value = 0;
+				console.log(`New value: ${current_value}`)
+				if (current_value < 0 && current_value !== reset_counter_constant) current_value = 0;
 				this.saveAndUpdate(current_value);
 
 			};
@@ -363,7 +367,7 @@ class Counter {
 
 		// Load counter from localStorage or set to reset_counter_constant if not present
 		let current_value = parseInt(GM_getValue(this.key));
-		if (!current_value && current_value != 0) {
+		if (!current_value && current_value !== 0) {
 			current_value = reset_counter_constant
 		}
 		this.saveAndUpdate(current_value);
@@ -417,27 +421,27 @@ const customGPTSCounterCallback = (value) => {
 		custom_gpts_timer.initializeTimeIfNull()
 
 	let old_value = parseInt(GM_getValue(custom_gpts_key + "_counter"));
-	if (!old_value && old_value != 0) {
+	if (!old_value && old_value !== 0) {
 		old_value = reset_counter_constant
 	}
 
 	//This is all pretty convoluted, I know.
-	console_log(`value: ${value}`)
-	console_log(`old_value: ${old_value}`)
-	if (value != reset_counter_constant) {
+	console.log(`value: ${value}`)
+	console.log(`old_value: ${old_value}`)
+	if (value !== reset_counter_constant) {
 		let diff = value - old_value
-		console_log(`diff: ${diff}`)
-		if (-1 <= diff && diff <= 1 && diff != 0 && value != reset_counter_constant) {
-			console_log("Updating counter1 from counter2 change...");
+		console.log(`diff: ${diff}`)
+		if (-1 <= diff && diff <= 1 && diff !== 0 && value !== reset_counter_constant) {
+			console.log("Updating counter1 from counter2 change...");
 			let new_value = gpt_4_counter.getValue() + diff
 			if (new_value < 0)
 				new_value = 0
-			console_log(`New value: ${new_value}`)
+			console.log(`New value: ${new_value}`)
 			// Use global counter1 object for calling the instance method
 			gpt_4_counter.saveAndUpdate(new_value);
-		} else if (old_value = reset_counter_constant && value > 0 && diff != 0) {
-			console_log("Updating gpt-4 counter due to custom coming out of reset...")
-			if (gpt_4_counter.getValue() != reset_counter_constant) {
+		} else if (old_value === reset_counter_constant && value > 0 && diff !== 0) {
+			console.log("Updating gpt-4 counter due to custom coming out of reset...")
+			if (gpt_4_counter.getValue() !== reset_counter_constant) {
 				gpt_4_counter.saveAndUpdate(gpt_4_counter.getValue() + 1)
 			} else {
 				gpt_4_counter.saveAndUpdate(1)
@@ -476,16 +480,16 @@ itemGrid.addEventListener('mouseleave', () => {
 });
 
 //Automatically update counters via event delegation/bubbling
-console_log("Adding event listeners...")
+console.log("Adding event listeners...")
 
 //keyup event (for sending messages by hitting enter)
 function handleKeyup(event) {
 	// Check if the event's target is the #prompt-textarea
 	if (event.target.matches('#prompt-textarea') && event.key === 'Enter' && !event.shiftKey) {
-		console_log("Enter pressed in textarea, without shift.");
+		console.log("Enter pressed in textarea, without shift.");
 		if (isThreeFive())
 			return
-		console_log("Increasing counter.")
+		console.log("Increasing counter.")
 		let is_custom = window.location.toString().includes("https://chat.openai.com/g/"); // Is custom GPT?
 		let counter = is_custom ? custom_gpts_counter : gpt_4_counter;
 		counter.saveAndUpdate(counter.getValue() + 1);
@@ -494,32 +498,34 @@ function handleKeyup(event) {
 
 //Helper functions to traverse DOM...
 function get_parent_message(element) {
-	console_log(element)
+	console.log(`Getting parent message of:`, element)
 	let parent_message = element
 	while (parent_message) {
-		console_log("Searching for parent message...")
+		console.log("Searching for parent message...")
 		if (parent_message.classList.contains("text-token-text-primary")) {
-			console_log("Found parent message, returning.")
+			console.log(`Found parent message`, parent_message)
 			return parent_message
 		}
 		parent_message = parent_message.parentElement
-		console_log(parent_message)
+
+		console.log(`Iterating, currently on`, parent_message)
 	}
 	return undefined
 }
 
 function is_message_assistant(message) {
+	console.log(`Checking if message is assistant for`, message)
 	let isAssistant = undefined
 	if (!message)
 		return undefined
 
 	//Look for the first element with multiple children.
-	while (message.childElementCount == 1) {
+	while (message.childElementCount === 1) {
 		message = message.lastChild
 	}
-	console_log("Iterating over children...")
+	console.log("Iterating over children...")
 	for (let child of message.children) {
-		console_log(child)
+		console.log(child)
 		if (child.classList.contains("w-full")) {
 			isAssistant = child.classList.contains("agent-turn")
 			break
@@ -530,64 +536,102 @@ function is_message_assistant(message) {
 
 //Clicker event, for all the buttons.
 function handleClick(event) {
-	console_log(event.target)
+	console.log(`Click event from:`, event.target)
 
 	if (isThreeFive())	//We just exit immediately.
 		return
 
 	//Get first button in tree.
 	let target_btn = event.target
-	while (target_btn && !target_btn.matches("button"))
+	while (target_btn && !target_btn.matches("button")) {
 		target_btn = target_btn.parentElement
+		if(target_btn && !("matches" in target_btn)) {
+        	target_btn = undefined;
+    	}
+	}
 
-	console_log(target_btn)
+
+	let target_path = event.target
+	while (target_path && !target_path.matches("path")) {
+		target_path = target_path.lastChild
+		if(target_path && !("matches" in target_path)) {
+        	target_path = undefined;
+    	}
+	}
+
+	console.log(`Found target_btn:`, target_btn)
+	console.log(`Found target_path:`, target_path)
 
 	let should_increase = false
 
 	if (target_btn) {	//Only continue if we found a button parent of event.target
 		//Refresh button
-		if (target_btn.matches('button.p-1.pl-0.rounded-md')) {
+		if (target_btn.matches('button.rounded-md')) {
+			if (target_path) {
+				console.log("Checking the path...")
+				let path_string = normalizeSVGPath(target_path.getAttribute("d"))
+				if (path_string === refresh_path) {
+					console.log("Path matches refresh path. Is refresh.")
+					should_increase = true
+				}
+			}
+
+
+			/*
 			let parent_msg = get_parent_message(target_btn)
 			let isAssistant = is_message_assistant(parent_msg)
-			console_log(isAssistant)
+			console.log(`parent_msg:`, parent_msg)
+			console.log(`isAssistant:`, isAssistant)
 
 			if (isAssistant) {
-				console_log("Is assistant button.")
-				if (target_btn == target_btn.parentElement.lastChild) {
-					console_log("Is last button.")
+				console.log("Is assistant button.")
+				if (target_btn === target_btn.parentElement.lastChild) {
+					console.log("Is last button.")
 					if (target_btn.parentElement.classList.contains("text-gray-400")) {
 						should_increase = true
 					} else {
-						console_log("Is dislike - ignore.")
+						console.log("Is dislike - ignore.")
 					}
 				} else {
-					console_log("Is not last button - ignore.")
+					console.log("Is not last button - ignore.")
 				}
 			} else {
-				console_log("Is not assistant button - ignore.")
-			}
+				if (parent_msg) {
+					console.log("Is not assistant button - ignore.")
+				} else if (target_path) {
+					console.log("Could not find parent msg - check the path.")
+					let path_string = normalizeSVGPath(target_path.getAttribute("d"))
+					if (path_string === refresh_path) {
+						console.log("Path matches refresh path. Is refresh.")
+						should_increase = true
+					}
+				} else {
+					console.log("No parent msg and no target path. What?")
+				}
+
+			}*/
 		}
 
 		//Send button
-		if (target_btn.getAttribute("data-testid") == "send-button") {
-			console_log("Is send button.")
+		if (target_btn.getAttribute("data-testid") === "send-button") {
+			console.log("Is send button.")
 			should_increase = true
 		}
 
 		//Save & Submit button
-		if (target_btn.textContent && (target_btn.textContent == "Save & Submit" || target_btn.textContent == "Regenerate")) {
-			console_log("Is save & submit or regenerate.")
+		if (target_btn.textContent && (target_btn.textContent === "Save & Submit" || target_btn.textContent === "Regenerate")) {
+			console.log("Is save & submit or regenerate.")
 			should_increase = true
 		}
 
 		if (target_btn.classList.contains("text-left") && target_btn.classList.contains("rounded-xl")) {
-			console_log("Is example chat")
+			console.log("Is example chat")
 			should_increase = true
 		}
 	}
 
 	if (should_increase) {
-		console_log("Increasing counter...")
+		console.log("Increasing counter...")
 		let is_custom = window.location.toString().includes("https://chat.openai.com/g/")
 		let counter = is_custom ? custom_gpts_counter : gpt_4_counter;
 		counter.saveAndUpdate(counter.getValue() + 1)

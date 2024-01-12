@@ -41,13 +41,14 @@ let reset_counter_constant = -999	//Used to fix a bug where resetting the custom
 
 Object.assign(itemGrid.style, {
 	position: 'fixed',
-	right: '70px',
+	right: '10vw',
 	bottom: '0',
 	zIndex: '1000',
 	display: 'grid',
-	gridTemplateColumns: 'repeat(2, 1fr)',
+	gridTemplateColumns: 'repeat(1, 1fr)',
 	gridTemplateRows: 'repeat(2, 1fr)',
-	gap: '10px'
+	gap: '10px',
+	width: '7vw'
 });
 
 if (!window.location.toString().includes("chat.openai.com")) {
@@ -238,7 +239,7 @@ class ResetTimer {
 	}
 }
 
-const custom_gpts_timer = new ResetTimer(custom_gpts_key + "_timer", custom_gpts_reset_time)
+//const custom_gpts_timer = new ResetTimer(custom_gpts_key + "_timer", custom_gpts_reset_time)
 const gpt_4_timer = new ResetTimer(gpt_4_key + "_timer", gpt_4_reset_time)
 
 
@@ -248,7 +249,7 @@ if (!window.location.toString().includes("chat.openai.com")) {
 }
 
 gpt_4_timer.timeInput.style.display = "none"
-custom_gpts_timer.timeInput.style.display = "none"
+//custom_gpts_timer.timeInput.style.display = "none"
 
 
 class Counter {
@@ -376,11 +377,11 @@ class Counter {
 }
 
 // Create counters
-let custom_gpts_counter = new Counter(custom_gpts_key + "_counter", custom_gpts_cap, "Custom GPTs", 'rgba(70, 130, 180, 0.5)', '100px', undefined);
-custom_gpts_timer.counter = custom_gpts_counter
+//let custom_gpts_counter = new Counter(custom_gpts_key + "_counter", custom_gpts_cap, "Custom GPTs", 'rgba(70, 130, 180, 0.5)', '100px', undefined);
+//custom_gpts_timer.counter = custom_gpts_counter
 
-if (!custom_gpts_timer.isTimeSet())
-	custom_gpts_counter.saveAndUpdate(0)
+//if (!custom_gpts_timer.isTimeSet())
+//	custom_gpts_counter.saveAndUpdate(0)
 
 let gpt_4_counter = new Counter(gpt_4_key + "_counter", gpt_4_cap, "GPT-4", 'rgba(119, 54, 135, 0.5)', '50px', undefined);
 gpt_4_timer.counter = gpt_4_counter
@@ -390,19 +391,19 @@ if (!gpt_4_timer.isTimeSet())
 //Set the timer colors depending on the counter values
 function setTimerColors() {
 	let gpt_4_value = gpt_4_counter.getValue()
-	let custom_gpt_value = custom_gpts_counter.getValue()
+	//let custom_gpt_value = custom_gpts_counter.getValue()
 	let gpt_4_max = gpt_4_counter.max_value
-	let custom_gpt_max = custom_gpts_counter.max_value
+	//let custom_gpt_max = custom_gpts_counter.max_value
 
 	if (gpt_4_value >= gpt_4_max) {
 		gpt_4_timer.setBgColor(red_timer_bg_color)
-		custom_gpts_timer.setBgColor(red_timer_bg_color)
-	} else if (custom_gpt_value >= custom_gpt_max) {
+		//custom_gpts_timer.setBgColor(red_timer_bg_color)
+	} else/* if (custom_gpt_value >= custom_gpt_max) {
 		gpt_4_timer.setBgColor(default_timer_bg_color)
 		custom_gpts_timer.setBgColor(red_timer_bg_color)
-	} else {
+	} else */{
 		gpt_4_timer.setBgColor(default_timer_bg_color)
-		custom_gpts_timer.setBgColor(default_timer_bg_color)
+		//custom_gpts_timer.setBgColor(default_timer_bg_color)
 	}
 }
 
@@ -417,6 +418,7 @@ const gpt4CounterCallback = (value) => {
 };
 
 // Function to be called in saveAndUpdate for Counter 2
+//Will never be called.
 const customGPTSCounterCallback = (value) => {
 	if (value > 0)
 		custom_gpts_timer.initializeTimeIfNull()
@@ -456,28 +458,28 @@ const customGPTSCounterCallback = (value) => {
 };
 
 gpt_4_counter.callback = gpt4CounterCallback
-custom_gpts_counter.callback = customGPTSCounterCallback
+//custom_gpts_counter.callback = customGPTSCounterCallback
 
 gpt_4_counter.counterDisplay.style.transform = 'translateY(100%)';
-custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
+//custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
 
 //Set callbacks to show/hide counter buttons
 itemGrid.addEventListener('mouseenter', () => {
 	gpt_4_counter.buttonContainer.style.display = ""
-	custom_gpts_counter.buttonContainer.style.display = ""
+	//custom_gpts_counter.buttonContainer.style.display = ""
 	gpt_4_timer.timeInput.style.display = ""
-	custom_gpts_timer.timeInput.style.display = ""
+	//custom_gpts_timer.timeInput.style.display = ""
 	gpt_4_counter.counterDisplay.style.transform = 'translateY(0)';
-	custom_gpts_counter.counterDisplay.style.transform = 'translateY(0)';
+	//custom_gpts_counter.counterDisplay.style.transform = 'translateY(0)';
 });
 
 itemGrid.addEventListener('mouseleave', () => {
 	gpt_4_counter.buttonContainer.style.display = "none"
-	custom_gpts_counter.buttonContainer.style.display = "none"
+	//custom_gpts_counter.buttonContainer.style.display = "none"
 	gpt_4_timer.timeInput.style.display = "none"
-	custom_gpts_timer.timeInput.style.display = "none"
+	//custom_gpts_timer.timeInput.style.display = "none"
 	gpt_4_counter.counterDisplay.style.transform = 'translateY(100%)';
-	custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
+	//custom_gpts_counter.counterDisplay.style.transform = 'translateY(100%)';
 });
 
 //Automatically update counters via event delegation/bubbling
@@ -491,9 +493,12 @@ function handleKeyup(event) {
 		if (isThreeFive())
 			return
 		console.log("Increasing counter.")
+		/*
 		let is_custom = window.location.toString().includes("https://chat.openai.com/g/"); // Is custom GPT?
 		let counter = is_custom ? custom_gpts_counter : gpt_4_counter;
 		counter.saveAndUpdate(counter.getValue() + 1);
+		*/
+		gpt_4_counter.saveAndUpdate(gpt_4_counter.getValue() + 1);
 	}
 }
 
@@ -633,9 +638,11 @@ function handleClick(event) {
 
 	if (should_increase) {
 		console.log("Increasing counter...")
+		/*
 		let is_custom = window.location.toString().includes("https://chat.openai.com/g/")
 		let counter = is_custom ? custom_gpts_counter : gpt_4_counter;
-		counter.saveAndUpdate(counter.getValue() + 1)
+		 */
+		gpt_4_counter.saveAndUpdate(gpt_4_counter.getValue() + 1)
 	}
 }
 

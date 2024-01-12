@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT GPT-4 Counters
 // @namespace 	 lugia19.com
-// @version      1.3.1
+// @version      1.3.2
 // @description  Add counters (and reset time indicators) for GPT-4/Custom GPTs to ChatGPT
 // @author       lugia19
 // @license		 MIT
